@@ -29,18 +29,34 @@
 
 ## Chunking Strategy
 
-**Chunk size:**
-**Overlap:**
+**Chunk size:** 600
+**Overlap:** 60
 
-<!-- What about YOUR documents made you pick these numbers? Short posts and
-     long sectioned guides don't want the same chunking, and "800 seemed
-     reasonable" earns nothing. Point at something you noticed when you read
-     the documents in Milestone 1.
+Document lengths across all 88 campus_life files run from 178 to 563
+characters, median 315 - every single post fits under 600, so that's set
+just above the longest real document rather than a round generic number
+like 800. The intent is that whole posts stay whole.
 
-     If you changed your mind partway through, say so and say why. That's worth
-     more than pretending you got it right first time.
+I checked whether paragraph structure argued for splitting anyway. Most
+posts have 3-5 blank-line-separated paragraphs, but the first is almost
+always a bare one-line title ("On the add/drop deadline", "Re: Halden
+Hall"), and the rest is 1-2 short body paragraphs building one point (e.g.
+the CS 210 workload post: "8-10 hrs/week" then "front-loaded"). Splitting
+on blank lines would strand a title on its own and separate a claim from
+its immediate qualifier - worse than keeping the post as one chunk.
 
-     Milestone 3. -->
+The one real exception is the dining-hall `_followup` files, which do stack
+two independent facts (wait time + closing time, in
+`dining_halden_hall_followup.txt`). I'm accepting that as the legitimate
+miss already called out in criteria.md #4, rather than building a splitting
+rule around ~7 files that would break the other 80+ posts that are
+genuinely one thought.
+
+Overlap of 60 (~10% of chunk size) exists only as a safety net for the rare
+case a document exceeds 600 characters - it should almost never fire on
+this corpus, but it avoids a hard cutoff with no shared context if a post
+grows past the cap later.
+
 
 ## Sample Chunks
 
@@ -53,29 +69,58 @@
 
      Milestone 3. -->
 
-**Chunk 1** — source: `` — produced by: ``
+**Chunk 1** - source: `admin_add_drop_deadline.txt#0` - produced by: `chunker.py::split_documents`
 
 ```
+On the add/drop deadline
+
+You can add a course through the end of the second week. Dropping is a longer window - through the end of week six - but a drop after week two shows as a W on your transcript. Nothing anywhere on the registrar's site says this plainly, and students find out from each other.
 ```
 
-**Chunk 2** — source: `` — produced by: ``
+**Chunk 2** - source: `course_biol_160.txt#0` - produced by: `chunker.py::split_documents`
 
 ```
+BIOL 160 Cell Biology
+
+I lived here my sophomore year. Format is lecture three times a week with a weekly lab. Assessment: four unit tests and a cumulative final. Not curved.
+
+Expect 9 to 11 hours a week, the heaviest first-year course by reputation.
+
+The one piece of advice: the unit tests come fast, roughly every three weeks; falling behind once is very hard to recover from.
 ```
 
-**Chunk 3** — source: `` — produced by: ``
+**Chunk 3** - source: `course_hist_118_workload.txt#0` - produced by: `chunker.py::split_documents`
 
 ```
+Workload for HIST 118 Modern World History
+
+People keep asking so: a lot of reading, about 120 pages a week, but no problem sets. That's real time, not optimistic time.
+
+It's front-loaded - the first month is heavier than the rest, partly because you're learning the format.
 ```
 
-**Chunk 4** — source: `` — produced by: ``
+**Chunk 4** - source: `dining_pellew_dining_hall_followup.txt#0` - produced by: `chunker.py::split_documents`
 
 ```
+Re: Pellew Dining Hall
+
+Adding to what people have said about Pellew Dining Hall. The wait figure of 12 to 18 minutes at peak matches what I've seen. If you're trying to eat between classes, go before 11:45 and it's a different building entirely.
+
+Also worth saying: the furthest hall from anywhere, next to the athletics centre. Nobody tells you this at orientation.
 ```
 
-**Chunk 5** — source: `` — produced by: ``
+**Chunk 5** - source: `housing_innisfree_hall.txt#0` - produced by: `chunker.py::split_documents`
 
 ```
+Innisfree Hall - what it's actually like
+
+Transferred in last year, so take this with a grain of salt. Built 1991, renovated 2022. Rooms are doubles arranged as pairs sharing one bathroom between two rooms.
+
+The good: the shared-bathroom-between-two-rooms arrangement is the best compromise on campus.
+
+The bad: no air conditioning, which matters for the first three weeks of September.
+
+Laundry costs $1.75 wash, $1.75 dry, app-based. On noise: moderate; the building is L-shaped and the short wing is much quieter.
 ```
 
 ## Sample Answer
