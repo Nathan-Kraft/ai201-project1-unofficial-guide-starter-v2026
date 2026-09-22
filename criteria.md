@@ -25,7 +25,7 @@ contains the answer.
 **Why this target:**
 <!-- e.g. "One of my questions is about a topic only two documents mention, so
      I expect that one to be hard." -->
-
+One of my questions asks about the workload in CS 210, which has 3 sibling files about it. Since they're topically similar, their embeddings could sit close together, making it plausible retrieval pulls the wrong sibling for this question.   
 ---
 
 ## 2. Every answer names a source
@@ -35,7 +35,7 @@ Every answer the system produces names at least one source document.
 **Why this target:**
 <!-- Why all five and not four? What about your setup makes that achievable —
      or what would have to go wrong for it not to be? -->
-
+I set this at 5 of 5 instead of 4 of 5 like the other criteria, because the system prompt in generate.py hard-codes the instruction to name the document the answer came from on every single call. It's not something the model has to figure out or judge correctly, it's a fixed formatting rule it's told to follow every time. Since it's that mechanical, I expect it to hold up every time instead of allowing for one miss.
 ---
 
 ## 3. The relevance gate stops out-of-corpus questions
@@ -69,10 +69,10 @@ in at least 4 of 5 tries.
        - "No chunk is shorter than 200 characters, since anything below that
           in my corpus turned out to be a heading with no content under it." -->
 
-
+When I sample 5 chunks at random, at least 4 of 5 contain exactly one identifiable fact or topic, not two unrelated ones.
 
 **Why this target:**
-
+I picked 4 of 5 rather than 5 of 5 because the dining hall followup files pair wait-time and best-time-to-go together, and depending on how my chunking algorithm splits things, those could plausibly read as two separate facts rather than one. I wanted room for that one legitimate edge case without it failing the whole check.
 
 
 ---
@@ -87,10 +87,10 @@ in at least 4 of 5 tries.
      present — anything, as long as it names a number or an observable
      outcome. -->
 
-
+For at least 4 of my 5 test questions, the cited source is the specific document containing the answer, not just a plausible sibling document about the same topic.
 
 **Why this target:**
-
+This stops wrong citations and makes sure that when information is correct, it's also traceable to the right place, so people can find it after the query. I allowed 1 of 5 to be wrong because my corpus has several sibling files that look alike — CS 210 alone has three separate files, and each dining hall has a near-identical followup post — so a citation landing on the wrong sibling is a realistic mistake, not a sign of total failure.
 
 
 ---
