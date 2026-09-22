@@ -1,6 +1,7 @@
+
 # API keys — never commit these
 .env
-
+.session_summary
 # Python
 __pycache__/
 *.py[cod]

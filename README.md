@@ -176,8 +176,10 @@ future question landing close to either group's boundary.
      Milestone 5. -->
 
 **1.**
+I asked Claude "Could someone answer a question using only this chunk without reading what came before or after?" for each of the 5 sample chunks. The check found 2 of 5 actually bundle several unrelated facts about one entity into a single chunk rather than holding one clean topic. Instead of writing a splitting rule to fix these certain files at the risk of breaking the others, I decided to keep them as the honest edge cases which I anticipated in criteria #4. 
 
 **2.**
+I asked Claude to verify how the starter's fixed 800-char/120-overlap chunker behaved on other corpora, including city_guides and advice_threads. It came back showing city_guides produces 51 chunks cut mid-section, pinned at the 800 char limit, and advice_threads produces a stray 2-character trailing fragment when a document doesn't divide evenly into the window. This confirmed the 'too small/too big' failure modes existed elsewhere, but also confirmed my own corpus didn't have this issue. Campus_life's actual issue was different, whether a post holding two thoughts should be split at all, which is what drove my 600/60 chunk size decision instead. It's also what shaped how I wrote my 4th criterion. 
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
