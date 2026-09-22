@@ -20,7 +20,7 @@
 # Unit 1
 
 ## What This Does
-
+This is a RAG system that answers questions about student life at a university, using campus_life, a set of 88 short student-written posts about dining, housing, admin rules, courses. It retrieves the most relevant post for a question and answers using only the content, citing the source file. If a question isn't covered by the documents, a relevance gate catches it and the system says so rather than guessing. Example questions it can answer include things like "What is the expected workload outside of class for a week in CS 210?" and "What are the wait times like at kestrel commons during Lunch?"
 <!-- Three or four sentences. Which corpus you picked, and the kinds of
      questions your system answers. Write it for someone who has never seen
      this repo.
@@ -125,30 +125,44 @@ Laundry costs $1.75 wash, $1.75 dry, app-based. On noise: moderate; the building
 
 ## Sample Answer
 
-<!-- One complete question and answer, pasted as text, with the source line
-     visible. Milestone 4. -->
-
-**Question:**
+**Question:** How much does laundry cost at Innisfree Hall?
 
 **Answer:**
 
 ```
+Laundry at Innisfree Hall costs $1.75 for a wash and $1.75 for a dry.
+
+Sources: `housing_innisfree_hall_laundry.txt` and `housing_innisfree_hall.txt`
 ```
+
+(best distance 0.201, cutoff 0.6). Retrieval also pulled in
+`housing_aldridge_hall.txt`, `housing_aldridge_hall_laundry.txt`, and
+`housing_calder_annexe.txt`, near-identical sibling docs with different
+prices ($1.75/$1.50 and $2.00/$1.75), and the model still attributed the
+right numbers to the right building.
 
 **My relevance cutoff:**
 
-<!-- The number you set in config.py, and how you got there.
-
-     You ran five questions your corpus covers and the five in OUT_OF_SCOPE
-     that it clearly doesn't, and wrote down the best distance for each. What
-     did those two groups look like? Where was the gap? Put the actual numbers
-     here — the table below wants all ten rows.
-
-     Milestone 4. -->
+I set `THRESHOLD = 0.6` in `config.py` (the starter default). My five in-corpus
+questions had best distances of 0.175-0.372, and the five `OUT_OF_SCOPE`
+questions had best distances of 0.825-0.934, a clean gap from about 0.37 to
+0.82 with no overlap between the two groups. 0.6 sits in the middle of that
+gap rather than hugging either edge, which gives the most margin against a
+future question landing close to either group's boundary.
 
 | Question | In corpus? | Best distance |
 |---|---|---|
-|  |  |  |
+| What are the wait times like at kestrel commons during Lunch? | yes | 0.177 |
+| What is the last week of the semester that you can withdraw from a class? | yes | 0.372 |
+| What is the expected workload outside of class for a week in CS 210? | yes | 0.204 |
+| What is a student's printing budget per semester? | yes | 0.310 |
+| How are juniors and seniors ordered in the housing lottery, as opposed to rising sophomores? | yes | 0.175 |
+| What is the capital of Mongolia? | no | 0.825 |
+| How do I change the oil in a diesel engine? | no | 0.934 |
+| Who won the 1994 World Cup? | no | 0.886 |
+| What is the recommended dosage of ibuprofen for a headache? | no | 0.844 |
+| How do I write a for loop in Rust? | no | 0.896 |
+
 
 ## How I Used AI
 

@@ -52,7 +52,7 @@ in at least 4 of 5 tries.
 **Why this target:**
 <!-- What did your distances look like when you set the cutoff in Milestone 4?
      Was there a clean gap, or did the two groups overlap? -->
-
+When I set the cutoff in Milestone 4, I measured 0.175-0.372 for in corpus questions against 0.825-0.934 for out-of-scope questions. The gap was clean with no overlap, from 0.37 to 0.82, with my threshold of 0.6 sitting in the middle of that gap.I still allowed 4/5 instead of 5/5 because there could be an out of scope question that is close in relation to something in scope causing it to be closer to the threshold. 
 ---
 
 ## 4. Something about your chunks
