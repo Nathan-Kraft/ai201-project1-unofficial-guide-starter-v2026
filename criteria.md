@@ -69,10 +69,10 @@ When I set the cutoff in Milestone 4, I measured 0.175-0.372 for in corpus quest
        - "No chunk is shorter than 200 characters, since anything below that
           in my corpus turned out to be a heading with no content under it." -->
 
-When I sample 5 chunks at random, at least 4 of 5 contain exactly one identifiable fact or topic, not two unrelated ones.
+When I sample 5 chunks at random, at least 4 of 5 contain only one countable fact (one number, deadline, or dollar amount), not two bundled together in the same chunk.
 
 **Why this target:**
-I picked 4 of 5 rather than 5 of 5 because the dining hall followup files pair wait-time and best-time-to-go together, and depending on how my chunking algorithm splits things, those could plausibly read as two separate facts rather than one. I wanted room for that one legitimate edge case without it failing the whole check.
+I picked 4 of 5 rather than 5 of 5 because the dining hall followup files pair a wait-time figure with a separate best-time-to-go recommendation, and depending on how my chunking algorithm splits things, those could plausibly land in the same chunk as two countable facts instead of one. I wanted room for that one legitimate edge case without it failing the whole check.
 
 
 ---
