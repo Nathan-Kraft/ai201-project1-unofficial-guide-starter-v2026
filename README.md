@@ -183,12 +183,50 @@ I asked Claude to verify how the starter's fixed 800-char/120-overlap chunker be
 
 ## Stretch: Metadata Filtering
 
-**Doing this one.** Retrieval will be narrowed by `category`, a metadata
+**Doing this one.** Retrieval can be narrowed by `category`, a metadata
 field derived from the part of each filename before its first underscore
-(`housing_calder_annexe.txt` → `"housing"`). It'll be stored on every chunk
-at index time in `store.py::build_index` and applied as a Chroma `where`
-clause in `store.py::search`, with `--category` exposed on
-`python app.py retrieve`.
+(`housing_calder_annexe.txt` → `"housing"`), stored on every chunk at index
+time in `store.py::build_index` and applied as a Chroma `where` clause in
+`store.py::search`. `python app.py retrieve "..." --category housing` (or
+`admin`, `dining`, `course`, `money`, etc.) is the CLI entry point.
+
+**Same query, with and without the filter:**
+
+Question: *"What does it cost?"*
+
+No filter (`python app.py retrieve "What does it cost?" --top-k 5`):
+
+```
+#   distance   source                           preview
+----------------------------------------------------------------------------------------------------
+1   0.5970     housing_calder_annexe.txt        Calder Annexe — what it's actually like  Second-year...
+2   0.6954     admin_printing_quota.txt         On the printing quota  Every student gets $30 of pri...
+3   0.7093     money_textbooks.txt              Textbooks without paying full price  The library hol...
+4   0.7146     housing_fenwick_court.txt        Fenwick Court — what it's actually like  Just finish...
+5   0.7191     housing_innisfree_hall.txt       Innisfree Hall — what it's actually like  Transferre...
+```
+
+With `--category housing` (`python app.py retrieve "What does it cost?" --top-k 5 --category housing`):
+
+```
+#   distance   source                           preview
+----------------------------------------------------------------------------------------------------
+1   0.5970     housing_calder_annexe.txt        Calder Annexe — what it's actually like  Second-year...
+2   0.7146     housing_fenwick_court.txt        Fenwick Court — what it's actually like  Just finish...
+3   0.7191     housing_innisfree_hall.txt       Innisfree Hall — what it's actually like  Transferre...
+4   0.7325     housing_aldridge_hall.txt        Aldridge Hall — what it's actually like  I lived her...
+5   0.7492     housing_morrow_house.txt         Morrow House — what it's actually like  Just finishe...
+```
+
+**What changed:** unfiltered, the top result was already `housing_calder_annexe.txt`,
+but positions 2–5 pulled in one admin doc (printing quota) and one money doc
+(textbooks) that happen to sit near "cost" in embedding space even though
+they're not about housing. With `--category housing`, those two get excluded
+before the top-k cutoff, so instead of leaving 2 of 5 slots, the filter frees up
+those slots for other housing posts (`aldridge_hall.txt`, `morrow_house.txt`)
+that didn't make the unfiltered top 5 at all. The single best match doesn't
+move, since it was already in-category, but every question where the best
+match lands outside the category the user meant would benefit.
 
 ---
 
