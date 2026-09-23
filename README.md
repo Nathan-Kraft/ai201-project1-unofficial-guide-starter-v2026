@@ -181,10 +181,14 @@ I asked Claude "Could someone answer a question using only this chunk without re
 **2.**
 I asked Claude to verify how the starter's fixed 800-char/120-overlap chunker behaved on other corpora, including city_guides and advice_threads. It came back showing city_guides produces 51 chunks cut mid-section, pinned at the 800 char limit, and advice_threads produces a stray 2-character trailing fragment when a document doesn't divide evenly into the window. This confirmed the 'too small/too big' failure modes existed elsewhere, but also confirmed my own corpus didn't have this issue. Campus_life's actual issue was different, whether a post holding two thoughts should be split at all, which is what drove my 600/60 chunk size decision instead. It's also what shaped how I wrote my 4th criterion. 
 
-<!-- ── Stretch features ─────────────────────────────────────────────────────
-     Doing one? Say so here BEFORE you start. A feature this README never
-     claims earns nothing.
-     ───────────────────────────────────────────────────────────────────────── -->
+## Stretch: Metadata Filtering
+
+**Doing this one.** Retrieval will be narrowed by `category`, a metadata
+field derived from the part of each filename before its first underscore
+(`housing_calder_annexe.txt` → `"housing"`). It'll be stored on every chunk
+at index time in `store.py::build_index` and applied as a Chroma `where`
+clause in `store.py::search`, with `--category` exposed on
+`python app.py retrieve`.
 
 ---
 
