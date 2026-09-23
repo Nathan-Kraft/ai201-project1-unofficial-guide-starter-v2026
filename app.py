@@ -145,7 +145,13 @@ def cmd_chunks(args):
 
 
 def cmd_retrieve(args):
-    """Milestone 4. Retrieval only, with distances, and no model call."""
+    """Milestone 4, plus the metadata-filtering stretch feature.
+
+    `--category` narrows retrieval to one metadata category (e.g. "dining",
+    "housing") before distances are computed. Passing it or leaving it out
+    is the same call to `search`, so this command is also how the
+    with-filter/without-filter comparison in the README was produced.
+    """
     from store import search
     import gate
 
@@ -154,6 +160,7 @@ def cmd_retrieve(args):
         top_k=args.top_k or config.TOP_K,
         corpus=args.corpus or config.CORPUS,
         variant=args.variant,
+        category=args.category,
     )
 
     if not results:
@@ -360,6 +367,14 @@ def build_parser():
     p_ret = sub.add_parser("retrieve", help="show distances only (Milestone 4)")
     p_ret.add_argument("question")
     p_ret.add_argument("--top-k", type=int)
+    p_ret.add_argument(
+        "--category",
+        help=(
+            "stretch feature: narrow retrieval to one metadata category "
+            "(e.g. dining, housing, admin, course) before distances are "
+            "computed"
+        ),
+    )
     p_ret.set_defaults(func=cmd_retrieve)
 
     p_ask = sub.add_parser("ask", help="ask a question")

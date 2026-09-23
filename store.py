@@ -42,6 +42,18 @@ class Result:
     label: str
     distance: float   # LOWER IS BETTER. 0.3 is close, 0.9 is unrelated.
     produced_by: str
+    category: str     # the part of the filename before the first "_"
+
+
+def category_of(source: str) -> str:
+    """The metadata field stretch filtering narrows on.
+
+    Every filename in this corpus starts with a category prefix
+    ("dining_pellew_dining_hall_followup.txt" -> "dining"), so this is free
+    metadata already sitting in the name rather than something invented for
+    the feature.
+    """
+    return source.split("_", 1)[0]
 
 
 _model = None
@@ -170,7 +182,12 @@ def build_index(
             documents=[c.text for c in window],
             embeddings=embed([c.text for c in window]),
             metadatas=[
-                {"source": c.source, "index": c.index, "produced_by": c.produced_by}
+                {
+                    "source": c.source,
+                    "index": c.index,
+                    "produced_by": c.produced_by,
+                    "category": category_of(c.source),
+                }
                 for c in window
             ],
         )
@@ -183,11 +200,17 @@ def search(
     top_k: int | None = None,
     corpus: str | None = None,
     variant: str = "default",
+    category: str | None = None,
 ) -> list[Result]:
     """
     Retrieve the chunks closest in meaning to a question.
 
     Returns them nearest-first, each with its distance.
+
+    `category` narrows the search to one metadata category (e.g. "dining",
+    "housing") before distances are computed, rather than filtering the top-k
+    results afterward, since a question can miss its best in-category chunk
+    entirely if that chunk isn't retrieved in the first place.
     """
     top_k = top_k or config.TOP_K
     name = config.collection_name(corpus, variant)
@@ -202,6 +225,9 @@ def search(
     raw = collection.query(
         query_embeddings=embed([question]),
         n_results=min(top_k, collection.count()),
+        # Chroma's metadata narrowing: only chunks whose "category" matches
+        # are eligible, so filtering happens before top-k, not after.
+        where={"category": category} if category else None,
     )
 
     results: list[Result] = []
@@ -215,6 +241,7 @@ def search(
                 label=f"{meta.get('source', 'unknown')}#{meta.get('index', 0)}",
                 distance=float(distance),
                 produced_by=str(meta.get("produced_by", "unknown")),
+                category=str(meta.get("category", "unknown")),
             )
         )
     return results
