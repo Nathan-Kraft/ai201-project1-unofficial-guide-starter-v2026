@@ -450,11 +450,11 @@ right numbers to the right building.
 
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | Retrieved chunk contains the answer | met | All 3 runs came back 5/5 for the questions, which exceeded the 4 of 5 target. |
+| 2 | Every answer names a source | met | Every answer in all 3 runs cited a source. 5/5 matching the 5 of 5 target exactly. |
+| 3 | Gate stops out-of-corpus questions | met | The gate refused 5/5 out of scope questions, which exceeds the 4 of 5 target. |
+| 4 | Sampled chunks answer one question, not two | missed | I revised this criteria to fix the wording that turned out to be ambiguous/unmeasurable, the results only changed to have all 3 runs be 2/5 still a miss, but easier for someone to understand what this criteria is supposed to be. The full revision and reason can be found in criteria.md. |
+| 5 | Cited source is the specific document | met | All 3 runs cited the specific correct document source, not a sibling document. 5/5 which exceeds the 4 of 5 target. |
 
 ## Diagnoses
 
