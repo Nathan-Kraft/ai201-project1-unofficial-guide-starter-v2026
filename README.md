@@ -32,30 +32,13 @@ This is a RAG system that answers questions about student life at a university, 
 **Chunk size:** 600
 **Overlap:** 60
 
-Document lengths across all 88 campus_life files run from 178 to 563
-characters, median 315 - every single post fits under 600, so that's set
-just above the longest real document rather than a round generic number
-like 800. The intent is that whole posts stay whole.
+Document lengths across all 88 campus_life files run from 178 to 563 characters, median 315, and every single post fits under 600, so that's set just above the longest real document rather than a round generic number like 800. The intent is that whole posts stay whole.
 
-I checked whether paragraph structure argued for splitting anyway. Most
-posts have 3-5 blank-line-separated paragraphs, but the first is almost
-always a bare one-line title ("On the add/drop deadline", "Re: Halden
-Hall"), and the rest is 1-2 short body paragraphs building one point (e.g.
-the CS 210 workload post: "8-10 hrs/week" then "front-loaded"). Splitting
-on blank lines would strand a title on its own and separate a claim from
-its immediate qualifier - worse than keeping the post as one chunk.
+I checked whether paragraph structure argued for splitting anyway. Most posts have 3-5 blank-line-separated paragraphs, but the first is almost always a bare one-line title ("On the add/drop deadline", "Re: Halden Hall"), and the rest is 1-2 short body paragraphs building one point (e.g. the CS 210 workload post: "8-10 hrs/week" then "front-loaded"). Splitting on blank lines would strand a title on its own and separate a claim from its immediate qualifier, which is worse than keeping the post as one chunk.
 
-The one real exception is the dining-hall `_followup` files, which do stack
-two independent facts (wait time + closing time, in
-`dining_halden_hall_followup.txt`). I'm accepting that as the legitimate
-miss already called out in criteria.md #4, rather than building a splitting
-rule around ~7 files that would break the other 80+ posts that are
-genuinely one thought.
+The one real exception is the dining-hall `_followup` files, which do stack two independent facts (wait time + closing time, in `dining_halden_hall_followup.txt`). I'm accepting that as the legitimate miss already called out in criteria.md #4, rather than building a splitting rule around ~7 files that would break the other 80+ posts that are genuinely one thought.
 
-Overlap of 60 (~10% of chunk size) exists only as a safety net for the rare
-case a document exceeds 600 characters - it should almost never fire on
-this corpus, but it avoids a hard cutoff with no shared context if a post
-grows past the cap later.
+Overlap of 60 (~10% of chunk size) exists only as a safety net for the rare case a document exceeds 600 characters, and it should almost never fire on this corpus, but it avoids a hard cutoff with no shared context if a post grows past the cap later.
 
 
 ## Sample Chunks
@@ -135,20 +118,11 @@ Laundry at Innisfree Hall costs $1.75 for a wash and $1.75 for a dry.
 Sources: `housing_innisfree_hall_laundry.txt` and `housing_innisfree_hall.txt`
 ```
 
-(best distance 0.201, cutoff 0.6). Retrieval also pulled in
-`housing_aldridge_hall.txt`, `housing_aldridge_hall_laundry.txt`, and
-`housing_calder_annexe.txt`, near-identical sibling docs with different
-prices ($1.75/$1.50 and $2.00/$1.75), and the model still attributed the
-right numbers to the right building.
+(best distance 0.201, cutoff 0.6). Retrieval also pulled in `housing_aldridge_hall.txt`, `housing_aldridge_hall_laundry.txt`, and `housing_calder_annexe.txt`, near-identical sibling docs with different prices ($1.75/$1.50 and $2.00/$1.75), and the model still attributed the right numbers to the right building.
 
 **My relevance cutoff:**
 
-I set `THRESHOLD = 0.6` in `config.py` (the starter default). My five in-corpus
-questions had best distances of 0.175-0.372, and the five `OUT_OF_SCOPE`
-questions had best distances of 0.825-0.934, a clean gap from about 0.37 to
-0.82 with no overlap between the two groups. 0.6 sits in the middle of that
-gap rather than hugging either edge, which gives the most margin against a
-future question landing close to either group's boundary.
+I set `THRESHOLD = 0.6` in `config.py` (the starter default). My five in-corpus questions had best distances of 0.175-0.372, and the five `OUT_OF_SCOPE` questions had best distances of 0.825-0.934, a clean gap from about 0.37 to 0.82 with no overlap between the two groups. 0.6 sits in the middle of that gap rather than hugging either edge, which gives the most margin against a future question landing close to either group's boundary.
 
 | Question | In corpus? | Best distance |
 |---|---|---|
@@ -183,12 +157,7 @@ I asked Claude to verify how the starter's fixed 800-char/120-overlap chunker be
 
 ## Stretch: Metadata Filtering
 
-**Doing this one.** Retrieval can be narrowed by `category`, a metadata
-field derived from the part of each filename before its first underscore
-(`housing_calder_annexe.txt` → `"housing"`), stored on every chunk at index
-time in `store.py::build_index` and applied as a Chroma `where` clause in
-`store.py::search`. `python app.py retrieve "..." --category housing` (or
-`admin`, `dining`, `course`, `money`, etc.) is the CLI entry point.
+**Doing this one.** Retrieval can be narrowed by `category`, a metadata field derived from the part of each filename before its first underscore (`housing_calder_annexe.txt` → `"housing"`), stored on every chunk at index time in `store.py::build_index` and applied as a Chroma `where` clause in `store.py::search`. `python app.py retrieve "..." --category housing` (or `admin`, `dining`, `course`, `money`, etc.) is the CLI entry point.
 
 **Same query, with and without the filter:**
 
@@ -218,15 +187,7 @@ With `--category housing` (`python app.py retrieve "What does it cost?" --top-k 
 5   0.7492     housing_morrow_house.txt         Morrow House — what it's actually like  Just finishe...
 ```
 
-**What changed:** unfiltered, the top result was already `housing_calder_annexe.txt`,
-but positions 2–5 pulled in one admin doc (printing quota) and one money doc
-(textbooks) that happen to sit near "cost" in embedding space even though
-they're not about housing. With `--category housing`, those two get excluded
-before the top-k cutoff, so instead of leaving 2 of 5 slots, the filter frees up
-those slots for other housing posts (`aldridge_hall.txt`, `morrow_house.txt`)
-that didn't make the unfiltered top 5 at all. The single best match doesn't
-move, since it was already in-category, but every question where the best
-match lands outside the category the user meant would benefit.
+**What changed:** unfiltered, the top result was already `housing_calder_annexe.txt`, but positions 2-5 pulled in one admin doc (printing quota) and one money doc (textbooks) that happen to sit near "cost" in embedding space even though they're not about housing. With `--category housing`, those two get excluded before the top-k cutoff, so instead of leaving 2 of 5 slots, the filter frees up those slots for other housing posts (`aldridge_hall.txt`, `morrow_house.txt`) that didn't make the unfiltered top 5 at all. The single best match doesn't move, since it was already in-category, but every question where the best match lands outside the category the user meant would benefit.
 
 ---
 
@@ -257,10 +218,9 @@ match lands outside the category the user meant would benefit.
 | 5. Cited source is the specific document | 4 of 5 | 5/5 | 5/5 | 5/5 | met |
 
 
-**Covers criteria 1 and 2:** the retrieved chunk contains the answer, and
-the answer names a source.
+**Covers criteria 1 and 2:** the retrieved chunk contains the answer, and the answer names a source.
 
-### What are the wait times like at kestrel commons during Lunch? — run 1
+### What are the wait times like at kestrel commons during Lunch? (Run 1)
 - Best distance: 0.1768 (passed the gate)
 - Sources retrieved: dining_halden_hall_followup.txt, dining_kestrel_commons.txt, dining_kestrel_commons_followup.txt, dining_north_kitchen_followup.txt, dining_the_ridgeway_cafe_followup.txt
 
@@ -271,11 +231,9 @@ Source: `dining_kestrel_commons.txt` (and `dining_kestrel_commons_followup.txt`)
 ```
 
 
-### Criterion 3 evidence — "What is the capital of Mongolia?"
+### Criterion 3 evidence: "What is the capital of Mongolia?"
 
-Produced by `store.py::search` (retrieval) and `gate.py::check` (the refusal
-decision). This is one of the five `OUT_OF_SCOPE` questions; the gate never
-lets it reach the model.
+Produced by `store.py::search` (retrieval) and `gate.py::check` (the refusal decision). This is one of the five `OUT_OF_SCOPE` questions; the gate never lets it reach the model.
 
 ```
 $ python app.py ask "What is the capital of Mongolia?"
@@ -286,11 +244,9 @@ I don't have enough information about that.
 0 model calls this session
 ```
 
-### Criterion 4 evidence — three random samples of 5 chunks
+### Criterion 4 evidence: three random samples of 5 chunks
 
-Produced by `chunker.py::split_documents`. Each run draws 5 chunks at random
-from all 88 and checks whether each one holds only one countable fact (a
-number, deadline, or dollar amount) rather than two bundled together.
+Produced by `chunker.py::split_documents`. Each run draws 5 chunks at random from all 88 and checks whether each one holds only one countable fact (a number, deadline, or dollar amount) rather than two bundled together.
 
 **Run 1 (1 of 5 passed):**
 
@@ -413,17 +369,11 @@ Most of it is optional and framed as though it isn't. The two sessions worth goi
 The club fair is genuinely useful but goes on for four hours and you only need the first forty minutes.
 ```
 
-Three independent samples land at 1/5, 2/5, and 2/5 — consistently below the
-4-of-5 target, and not limited to the dining follow-up files my Milestone 3
-write-up flagged. Admin, health, housing, and orientation posts bundle
-multiple facts just as often.
+Three independent samples land at 1/5, 2/5, and 2/5, consistently below the 4-of-5 target, and not limited to the dining follow-up files my Milestone 3 write-up flagged. Admin, health, housing, and orientation posts bundle multiple facts just as often.
 
-### Criterion 5 evidence — "How much does laundry cost at Innisfree Hall?"
+### Criterion 5 evidence: "How much does laundry cost at Innisfree Hall?"
 
-Produced by `store.py::search` (retrieval) and `generate.py::answer_from_chunks`
-(the citation). Chosen over the Kestrel Commons example because retrieval
-actually pulled in sibling documents here, so this is a real test of
-criterion 5 rather than an easy case with no siblings competing.
+Produced by `store.py::search` (retrieval) and `generate.py::answer_from_chunks` (the citation). Chosen over the Kestrel Commons example because retrieval actually pulled in sibling documents here, so this is a real test of criterion 5 rather than an easy case with no siblings competing.
 
 ```
 Laundry at Innisfree Hall costs $1.75 for a wash and $1.75 for a dry.
@@ -431,11 +381,7 @@ Laundry at Innisfree Hall costs $1.75 for a wash and $1.75 for a dry.
 Sources: `housing_innisfree_hall_laundry.txt` and `housing_innisfree_hall.txt`
 ```
 
-(best distance 0.201, cutoff 0.6). Retrieval also pulled in
-`housing_aldridge_hall.txt`, `housing_aldridge_hall_laundry.txt`, and
-`housing_calder_annexe.txt` — near-identical sibling docs with different
-prices ($1.75/$1.50 and $2.00/$1.75) — and the model still attributed the
-right numbers to the right building.
+(best distance 0.201, cutoff 0.6). Retrieval also pulled in `housing_aldridge_hall.txt`, `housing_aldridge_hall_laundry.txt`, and `housing_calder_annexe.txt`, near-identical sibling docs with different prices ($1.75/$1.50 and $2.00/$1.75), and the model still attributed the right numbers to the right building.
 
 ## Verdicts
 
@@ -475,6 +421,14 @@ right numbers to the right building.
      low, and which one you'd tighten and to what.
 
      Milestone 3. -->
+
+**Criterion 4 - chunking stage:**
+
+`chunker.py::split_documents` keeps a whole post as one chunk as long as it's under 600 characters (lines 108-121), and the only thing it checks is length, not how many separate things the post is talking about. I wrote that rule expecting one edge case, the dining `_followup` files pairing a wait time with a closing time, and said as much in criteria.md #4.
+
+The three runs show it's not just those ~7 files. `admin_add_drop_deadline.txt` bundles the add deadline and the drop deadline, `health_center.txt` bundles walk-in hours and counselling intake, `housing_calder_annexe.txt` bundles a room description, a laundry price, and a noise note, and `orientation_what_matters.txt` bundles the adviser meeting and the club fair. My Milestone 3 assumption, that only the dining follow-up files stack two facts, underestimated how many posts actually have that structure.
+
+Different categories, same cause: a post just needs 2-3 body paragraphs and still fit under 600 characters, and nothing about the chunker looks past its length to notice that. It's one mechanism producing the miss repeatedly, not five unrelated ones.
 
 ## The Improvement
 
