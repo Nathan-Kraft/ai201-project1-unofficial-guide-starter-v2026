@@ -250,15 +250,192 @@ match lands outside the category the user meant would benefit.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5/5 |5/5 | 5/5 | met |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | met |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | met |
+| 4. Sampled chunks hold one fact, not two|4 of 5 | 1/5 | 2/5 | 2/5 | missed |
+| 5. Cited source is the specific document | 4 of 5 | 5/5 | 5/5 | 5/5 | met |
 
-<!-- Underneath, paste the REAL output for each criterion from one of your
-     runs — the actual text your system produced, not a description of it.
-     Name the file and function that produced it. -->
+
+**Covers criteria 1 and 2:** the retrieved chunk contains the answer, and
+the answer names a source.
+
+### What are the wait times like at kestrel commons during Lunch? — run 1
+- Best distance: 0.1768 (passed the gate)
+- Sources retrieved: dining_halden_hall_followup.txt, dining_kestrel_commons.txt, dining_kestrel_commons_followup.txt, dining_north_kitchen_followup.txt, dining_the_ridgeway_cafe_followup.txt
+
+```
+At Kestrel Commons, wait times are 20 to 25 minutes between 12:15 and 1:00, and under 5 minutes before 11:45. 
+
+Source: `dining_kestrel_commons.txt` (and `dining_kestrel_commons_followup.txt`)
+```
+
+
+### Criterion 3 evidence — "What is the capital of Mongolia?"
+
+Produced by `store.py::search` (retrieval) and `gate.py::check` (the refusal
+decision). This is one of the five `OUT_OF_SCOPE` questions; the gate never
+lets it reach the model.
+
+```
+$ python app.py ask "What is the capital of Mongolia?"
+  (best distance 0.825, cutoff 0.6)
+
+I don't have enough information about that.
+
+0 model calls this session
+```
+
+### Criterion 4 evidence — three random samples of 5 chunks
+
+Produced by `chunker.py::split_documents`. Each run draws 5 chunks at random
+from all 88 and checks whether each one holds only one countable fact (a
+number, deadline, or dollar amount) rather than two bundled together.
+
+**Run 1 (1 of 5 passed):**
+
+```
+[PASS] housing_aldridge_hall_noise.txt#0
+Noise levels in Aldridge Hall
+
+Asked about this a lot so writing it down. Quiet floors on 3 and 4 are genuinely enforced.
+
+If you're someone who needs quiet to work, the library is open until 2am during term and that's what most people in this building end up doing.
+```
+```
+[FAIL] admin_add_drop_deadline.txt#0
+On the add/drop deadline
+
+You can add a course through the end of the second week. Dropping is a longer window — through the end of week six — but a drop after week two shows as a W on your transcript. Nothing anywhere on the registrar's site says this plainly, and students find out from each other.
+```
+```
+[FAIL] dining_the_ridgeway_cafe_followup.txt#0
+Re: The Ridgeway Café
+
+Adding to what people have said about The Ridgeway Café. The wait figure of 10 to 15 minutes at 12:30 matches what I've seen. If you're trying to eat between classes, go before 11:45 and it's a different building entirely.
+
+Also worth saying: seating is tight; about 40 seats for a building of 900. Nobody tells you this at orientation.
+```
+```
+[FAIL] health_center.txt#0
+The health centre
+
+Walk-in hours are 8am to 11am; everything after that is by appointment and appointments run about a week out. If something is urgent, go at 8am and wait rather than booking.
+
+Counselling is separate, in the same building, and has its own intake process with a shorter wait than people expect — usually three or four days for a first session.
+```
+```
+[FAIL] housing_calder_annexe.txt#0
+Calder Annexe — what it's actually like
+
+Second-year here. Built 2003. Rooms are mostly singles, some doubles, in clusters of six around a lounge.
+
+The good: the cluster lounges mean you meet people without having to try.
+
+The bad: the singles are small — about 90 square feet — and the desks are fixed.
+
+Laundry costs $2.00 wash, $1.75 dry, app-based. On noise: depends entirely on your cluster; there's no building-wide pattern.
+```
+
+**Run 2 (2 of 5 passed):**
+
+```
+[PASS] admin_dining_dollars.txt#0
+On the dining dollars
+
+Declining balance — what everyone calls dining dollars — rolls over from the autumn semester to the spring, but not from spring to the following autumn. Whatever is left in May disappears.
+```
+```
+[PASS] course_stat_150_exams.txt#0
+STAT 150 Applied Statistics — assessment
+
+Three equally weighted midterms, no final. No curve, but the lowest midterm is dropped.
+
+The dropped midterm makes the first one low-stakes; use it to learn the format.
+```
+```
+[FAIL] dining_the_atrium_followup.txt#0
+Re: The Atrium
+
+Adding to what people have said about The Atrium. The wait figure of no queue matches what I've seen. If you're trying to eat between classes, go before 11:45 and it's a different building entirely.
+
+Also worth saying: picked clean by 1:15 and not restocked again until the next morning. Nobody tells you this at orientation.
+```
+```
+[FAIL] dining_the_ridgeway_cafe_followup.txt#0
+(same chunk as Run 1 — reproduced above)
+```
+```
+[FAIL] study_group_rooms.txt#0
+Booking a group study room
+
+Rooms book two weeks ahead through the library site, in two-hour blocks, maximum two blocks per person per week. The limit is per person, so a group of four can chain together eight hours if they coordinate.
+
+Rooms 210 and 211 have whiteboards that actually erase. The others don't and no amount of scrubbing helps.
+```
+
+**Run 3 (2 of 5 passed):**
+
+```
+[PASS] admin_dining_dollars.txt#0
+(same chunk as Run 2 — reproduced above)
+```
+```
+[PASS] course_engl_205_exams.txt#0
+ENGL 205 Writing for the Sciences — assessment
+
+No exams; a portfolio of six revised pieces. Not curved.
+
+The portfolio is graded on revision, so keep your drafts — you're marked on the distance travelled.
+```
+```
+[FAIL] dining_halden_hall.txt#0
+Halden Hall
+
+I lived here my sophomore year. Wait times: rarely more than 8 minutes, even at noon. The thing worth going for is soup rotation, and the bread is baked on site. The thing to know is that closes at 7:00pm, which catches people out.
+
+Hours are 7:30am to 7:00pm weekdays, closed Sundays. Costs one meal swipe, or $10.00 cash.
+```
+```
+[FAIL] housing_old_brewhouse_laundry.txt#0
+Laundry in Old Brewhouse
+
+Machines take $1.50 wash, $1.50 dry, coin only, and the machines are old. There are eight washers and six dryers for the building, which is the wrong ratio and means the dryers back up on Sunday evenings.
+
+Best time to do laundry here is Tuesday or Wednesday morning. Sunday after 6pm you will wait.
+```
+```
+[FAIL] orientation_what_matters.txt#0
+What actually matters in orientation week
+
+Most of it is optional and framed as though it isn't. The two sessions worth going to are the one where you meet your academic adviser and the library walkthrough, because both save you time later.
+
+The club fair is genuinely useful but goes on for four hours and you only need the first forty minutes.
+```
+
+Three independent samples land at 1/5, 2/5, and 2/5 — consistently below the
+4-of-5 target, and not limited to the dining follow-up files my Milestone 3
+write-up flagged. Admin, health, housing, and orientation posts bundle
+multiple facts just as often.
+
+### Criterion 5 evidence — "How much does laundry cost at Innisfree Hall?"
+
+Produced by `store.py::search` (retrieval) and `generate.py::answer_from_chunks`
+(the citation). Chosen over the Kestrel Commons example because retrieval
+actually pulled in sibling documents here, so this is a real test of
+criterion 5 rather than an easy case with no siblings competing.
+
+```
+Laundry at Innisfree Hall costs $1.75 for a wash and $1.75 for a dry.
+
+Sources: `housing_innisfree_hall_laundry.txt` and `housing_innisfree_hall.txt`
+```
+
+(best distance 0.201, cutoff 0.6). Retrieval also pulled in
+`housing_aldridge_hall.txt`, `housing_aldridge_hall_laundry.txt`, and
+`housing_calder_annexe.txt` — near-identical sibling docs with different
+prices ($1.75/$1.50 and $2.00/$1.75) — and the model still attributed the
+right numbers to the right building.
 
 ## Verdicts
 
