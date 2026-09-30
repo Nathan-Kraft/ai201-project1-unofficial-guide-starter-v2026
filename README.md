@@ -433,8 +433,10 @@ Different categories, same cause: a post just needs 2-3 body paragraphs and stil
 ## The Improvement
 
 **What I changed:**
+Rewrote `chunker.py::split_documents` so it chunks on paragraph boundaries instead of keeping a whole post as one chunk if it is under 600 characters. Each post's paragraphs, separated by blank lines, become their own chunk, except the title which stays merged with the first body paragraph. Oversized paragraph fallback is still there for the rare case where a paragraph exceeds 600 characters. I re-indexed under a second variant (paragraph) so the original index and its results stay intact for comparison. 88 posts now produce 183 chunks. 
 
 **Why I picked it:**
+This follows directly from the Diagnoses section: the miss traced to `split_documents` only checking a post's length, never how many separate things it talked about. So splitting on the paragraph boundaries the corpus already uses to separate one thought from the next attacks that original mechanism directly instead of touching retrieval or the gate, which weren't implicated.
 
 <!-- Connect it to a specific diagnosis above in one sentence. If you can't,
      you picked a fix because it sounded impressive. -->
@@ -446,11 +448,11 @@ Different categories, same cause: a post just needs 2-3 body paragraphs and stil
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5/5 | 5/5 | 5/5 | pass |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | pass |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | pass |
+| 4. Sampled chunks answer one question, not two | 4 of 5 | 4/5 | 5/5 | 3/5 | missed |
+| 5. Cited source is the specific document | 5 of 5 | 5/5 | 5/5 | 5/5 | pass |
 
 **Did it help?**
 
@@ -460,6 +462,15 @@ Different categories, same cause: a post just needs 2-3 body paragraphs and stil
      tell.
 
      Milestone 4. -->
+It helped but not enough to flip the verdict. Criteria 1, 2, 3, and 5 were already at the ceiling, 5/5 every run, before and stayed there, so nothing moved or got worse.
+
+Criterion 4 is where it mattered and changed. Three random samples went from 1/5, 2/5, 2/5 before to 4/5, 5/5, 3/5 after. Two of the three runs now clear the 4 of 5 target, where none did before. But the target has to hold for every run, so run 3's 3/5 keeps the result a miss, just a narrower one.
+
+The remaining failures also converged on one pattern: chunks that pair a fact about a place (a laundry price, a lot's availability) with an unrelated second fact about the same place. Paragraph splitting doesn't fix this, since both facts can still land in the same paragraph. So overall it helped in a measurable way, and narrowed the problem down instead of solving it.
+
+| Criterion | Before | After |
+|---|---|---|
+| 4. Sampled chunks answer one question, not two | 1/5, 2/5, 2/5 | 4/5, 5/5, 3/5 |
 
 ## What's Still Broken
 

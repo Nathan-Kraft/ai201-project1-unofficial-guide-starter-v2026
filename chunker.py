@@ -80,22 +80,40 @@ def fallback_split(
     return chunks
 
 
+def _paragraphs_with_title_merged(text: str) -> list[str]:
+    """
+    Split on blank lines, then reattach a bare title line to the paragraph
+    that follows it instead of leaving it to stand alone.
+
+    Every post in this corpus opens with a one-line title ("On the add/drop
+    deadline", "Re: Halden Hall") followed by 1-3 body paragraphs. A title by
+    itself isn't a chunk anyone could retrieve anything useful from, so it
+    always travels with the first body paragraph. Everything after that is
+    its own paragraph.
+    """
+    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+    if len(paragraphs) <= 1:
+        return paragraphs
+
+    title, first_body, *rest = paragraphs
+    return [f"{title}\n\n{first_body}", *rest]
+
+
 def split_documents(documents: list[Document]) -> list[Chunk]:
     """
-    Split documents into chunks. ⚠️ REPLACE THE BODY OF THIS IN MILESTONE 3.
+    Split documents into chunks, one per paragraph (title merged into the
+    first body paragraph) instead of one whole post per chunk.
 
-    Right now it just calls the fallback. That is the plain, generic behaviour
-    the brief is talking about.
-
-    When you write your own strategy, set `produced_by` to
-    "chunker.py::split_documents" so your README's Sample Chunks section names
-    the right function. `app.py chunks` prints that string for you.
-
-    Things worth thinking about before you write any code:
-      - Are your documents short posts or long guides?
-      - Is the useful information in one sentence, or spread over a paragraph?
-      - Would splitting on paragraph breaks keep more thoughts intact than
-        splitting on a character count?
+    Keeping a whole post as one chunk whenever it was under 600 characters
+    (the original Milestone 3 strategy) only checked length, not how many
+    separate things a post talked about. Posts with 2-3 body paragraphs each
+    making their own point, like `admin_add_drop_deadline.txt` (add deadline,
+    drop deadline) or `health_center.txt` (walk-in hours, counselling
+    intake), stayed bundled into a single chunk no matter how many distinct
+    facts they held. Splitting on the blank lines the corpus already uses to
+    separate one thought from the next fixes that directly, without
+    resurrecting the title-stranding problem paragraph-splitting caused when
+    it was first considered in Milestone 3.
     """
     chunk_size = config.CHUNK_SIZE
     overlap = config.CHUNK_OVERLAP
@@ -106,37 +124,44 @@ def split_documents(documents: list[Document]) -> list[Chunk]:
     chunks: list[Chunk] = []
     for doc in documents:
         text = doc.text.strip()
-        if len(text) <= chunk_size:
-            # The common case for this corpus: a whole post already fits
-            # under chunk_size, so it stays one chunk instead of being cut
-            # on a character count that has nothing to do with its content.
-            chunks.append(
-                Chunk(
-                    text=text,
-                    source=doc.source,
-                    index=0,
-                    produced_by="chunker.py::split_documents",
-                )
-            )
-            continue
-
-        # Rare case: a document longer than chunk_size. Fall back to fixed
-        # windows with overlap rather than leaving it as one oversized chunk.
-        start = 0
         index = 0
-        while start < len(text):
-            piece = text[start : start + chunk_size].strip()
-            if piece:
+        for paragraph in _paragraphs_with_title_merged(text):
+            # Normal case for this corpus: a paragraph (title + first body
+            # paragraph counts as one) already fits under chunk_size, so it
+            # becomes one chunk and `continue` skips the oversized-paragraph
+            # handling below entirely.
+            if len(paragraph) <= chunk_size:
                 chunks.append(
                     Chunk(
-                        text=piece,
+                        text=paragraph,
                         source=doc.source,
                         index=index,
                         produced_by="chunker.py::split_documents",
                     )
                 )
                 index += 1
-            start += chunk_size - overlap
+                continue
+
+            # Rare case: a single paragraph longer than chunk_size (whole
+            # posts here run 178-563 characters, so an individual paragraph
+            # is expected to never actually hit this). Only reached when the
+            # `if` above is false, i.e. this loop iteration's paragraph did
+            # NOT `continue` past it. Falls back to fixed windows with
+            # overlap rather than leaving the paragraph oversized.
+            start = 0
+            while start < len(paragraph):
+                piece = paragraph[start : start + chunk_size].strip()
+                if piece:
+                    chunks.append(
+                        Chunk(
+                            text=piece,
+                            source=doc.source,
+                            index=index,
+                            produced_by="chunker.py::split_documents",
+                        )
+                    )
+                    index += 1
+                start += chunk_size - overlap
 
     return chunks
 
