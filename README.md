@@ -20,7 +20,8 @@
 # Unit 1
 
 ## What This Does
-This is a RAG system that answers questions about student life at a university, using campus_life, a set of 88 short student-written posts about dining, housing, admin rules, courses. It retrieves the most relevant post for a question and answers using only the content, citing the source file. If a question isn't covered by the documents, a relevance gate catches it and the system says so rather than guessing. Example questions it can answer include things like "What is the expected workload outside of class for a week in CS 210?" and "What are the wait times like at kestrel commons during Lunch?"
+
+This is a RAG system that answers questions about student life at a university, using `campus_life`, a set of 88 short student-written posts about dining, housing, admin rules, and courses. It retrieves the most relevant post for a question and answers using only the content, citing the source file. If a question isn't covered by the documents, a relevance gate catches it and the system says so rather than guessing. Example questions it can answer include things like "What is the expected workload outside of class for a week in CS 210?" and "What are the wait times like at Kestrel Commons during lunch?"
 <!-- Three or four sentences. Which corpus you picked, and the kinds of
      questions your system answers. Write it for someone who has never seen
      this repo.
@@ -150,10 +151,19 @@ I set `THRESHOLD = 0.6` in `config.py` (the starter default). My five in-corpus 
      Milestone 5. -->
 
 **1.**
+
 I asked Claude "Could someone answer a question using only this chunk without reading what came before or after?" for each of the 5 sample chunks. The check found 2 of 5 actually bundle several unrelated facts about one entity into a single chunk rather than holding one clean topic. Instead of writing a splitting rule to fix these certain files at the risk of breaking the others, I decided to keep them as the honest edge cases which I anticipated in criteria #4. 
 
 **2.**
+
 I asked Claude to verify how the starter's fixed 800-char/120-overlap chunker behaved on other corpora, including city_guides and advice_threads. It came back showing city_guides produces 51 chunks cut mid-section, pinned at the 800 char limit, and advice_threads produces a stray 2-character trailing fragment when a document doesn't divide evenly into the window. This confirmed the 'too small/too big' failure modes existed elsewhere, but also confirmed my own corpus didn't have this issue. Campus_life's actual issue was different, whether a post holding two thoughts should be split at all, which is what drove my 600/60 chunk size decision instead. It's also what shaped how I wrote my 4th criterion. 
+
+**Unit 2**
+
+**1.**
+
+I asked Claude to help diagnose which pipeline stage caused the criterion 4 miss, and to look for a pattern across the failing chunks instead of explaining each one separately. It traced the miss to one mechanism in `chunker.py::split_documents`: keeping a whole post as one chunk based on length alone, never how many separate things the post talked about. It showed that failures in four different categories, admin, health, housing, and orientation, were all the same mechanism and not four unrelated problems. That reframing changed what I fixed. Instead of treating this as a handful of one-off bad chunks, I rewrote the one length-only rule the diagnosis pointed at. Doing this improved criterion 4's numbers, even though it still missed the target. 
+
 
 ## Stretch: Metadata Filtering
 
@@ -472,6 +482,7 @@ The remaining failures also converged on one pattern: chunks that pair a fact ab
 |---|---|---|
 | 4. Sampled chunks answer one question, not two | 1/5, 2/5, 2/5 | 4/5, 5/5, 3/5 |
 
+
 ## What's Still Broken
 
 <!-- For each criterion still missed after your fix: what you'd do about it,
@@ -482,9 +493,33 @@ The remaining failures also converged on one pattern: chunks that pair a fact ab
 
      Milestone 5. -->
 
+Only criterion 4 is still missed. Criteria 1, 2, 3, and 5 hit their targets in all three runs.
+
+**Criterion 4 - sampled chunks answer one question, not two (4/5, 5/5, 3/5 against a target of 4 of 5):**
+
+Paragraph chunking raised the runs from 1/5, 2/5, 2/5 to 4/5, 5/5, 3/5. The two failures in run 3 show what's left.
+
+`housing_calder_annexe.txt#3` pairs a laundry price with a noise note, and `admin_parking_permits.txt#0` pairs one lot's availability with another lot's and a workaround. In both, the facts share a paragraph, so a blank-line split can't separate them.
+
+**What I'd do about it:** split at the sentence level and group sentences by topic, with a minimum chunk size so a short qualifier doesn't end up as its own chunk.
+
+**Why I stopped:** two reasons. I already needed an extension to finish this project, and a sentence-level split would multiply the 183 chunks and risk separating claims from their qualifiers across the whole corpus. Criteria 1 and 3 are at ceiling, and the paragraph split already pulled the out-of-scope distances closer to the cutoff (Mongolia went from 0.825 to 0.787, still well clear of the 0.6). I didn't want to risk the other four criteria to fix one narrow miss.
+
+One caveat on the measurement: Criterion 4 is a judgment call on a random draw of 5. I moved `admin_housing_lottery.txt#0` from fail to pass because it fully answers the ordering question and the schedule date is incidental. The other call would have changed that run's score.
+
 ## What I'd Do Differently
 
 <!-- Knowing what you know now — which of your five criteria would you write
      differently, and why?
 
      Milestone 5. -->
+
+I would rewrite criterion 4, changing both how I picked the target and how I measure it.
+
+**The target came from too little evidence**
+
+I wrote criterion 4 expecting that only the dining `_followup` files, about seven of them, would bundle two facts, and I justified the 4/5 target on that. Then my own samples showed admin, health, housing, and orientation posts bundle facts just as often. I would instead read a sample across every category before choosing the target, because I predicted the problem from one file type and set a target that was too optimistic.
+
+**The measurement was unstable**
+
+Scoring five random chunks (from 88 before the fix, 183 after) gave 1/5, 2/5, 2/5 and 4/5, 5/5, 3/5 after. Some of that spread is just which chunks got drawn. I would write the definition of "one distinct question" down first, with the wash and dry price rule from my Unit 2 revision. I would then score all 183 chunks, or a fixed set, and set the target as a percentage of chunks. This way calls like `admin_housing_lottery.txt#0` are settled by the definition, not decided after seeing the chunk.

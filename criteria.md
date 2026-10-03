@@ -69,7 +69,7 @@ When I set the cutoff in Milestone 4, I measured 0.175-0.372 for in corpus quest
        - "No chunk is shorter than 200 characters, since anything below that
           in my corpus turned out to be a heading with no content under it." -->
 
-When I sample 5 chunks at random, at least 4 of 5 contain only one countable fact (measurements, deadline, or dollar amount), not two bundled together in the same chunk.
+When I sample 5 chunks at random, at least 4 of 5 contain only one countable fact (one number, deadline, or dollar amount), not two bundled together in the same chunk.
 
 **Why this target:**
 I picked 4 of 5 rather than 5 of 5 because the dining hall followup files pair a wait-time figure with a separate best-time-to-go recommendation, and depending on how my chunking algorithm splits things, those could plausibly land in the same chunk as two countable facts instead of one. I wanted room for that one legitimate edge case without it failing the whole check.
@@ -79,9 +79,7 @@ I picked 4 of 5 rather than 5 of 5 because the dining hall followup files pair a
 > (Two numbers about the same thing, like a wash price and a dry price for
 > one machine, still count as one.)
 >
-> **Why revised:** "One countable fact" invited literal miscounting. A chunk
-> with two prices for one machine, a wash price and a dry price, would get
-> flagged as bundling two facts when it is clearly one fact. This version is
+> **Why revised:** "One countable fact" invited literal miscounting. A chunk with two prices for one machine, a wash price and a dry price, would get flagged as bundling two facts when it is clearly one fact. This version is
 > checkable by a stranger without needing my judgment of what counts as one
 > fact versus two, and the parenthetical closes that exact miscounting trap.
 > The result is still an honest miss either way — this fixes a measurement
